@@ -326,6 +326,11 @@ Presentation::Presentation() {
 
   loadEmulators();
 
+  if(!program.startGameLoad.empty()) {
+    // Skip the centered logo/moon until the queued game loads (CLI or auto game.z64).
+    showIcon(false);
+  }
+
   resizeWindow();
   setTitle({ares::Name, " ", ares::Version});
   setAssociatedFile();

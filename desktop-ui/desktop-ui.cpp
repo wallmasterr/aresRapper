@@ -154,6 +154,10 @@ auto nall::main(Arguments arguments) -> void {
     print("  --settings-file path  Specify a settings file override (settings.bml)\n");
     print("  --save-state slot     Specify a save state slot to load (1-9)\n");
     print("\n");
+    print("If no game path is given, ares looks for game.z64 next to the executable,\n");
+    print("then in the current working directory, loads it when found, and starts fullscreen\n");
+    print("(unless --pseudofullscreen was set).\n");
+    print("\n");
     print("Available Systems:\n");
     print("  ");
     for(auto& emulator : emulators) {
@@ -187,6 +191,15 @@ auto nall::main(Arguments arguments) -> void {
       program.startGameLoad.push_back(argument);
     } else if(program.kiosk) {
       invalidKioskPaths.push_back(argument);
+    }
+  }
+
+  if(program.startGameLoad.empty()) {
+    string autoRom = {Path::program(), "game.z64"};
+    if(!inode::exists(autoRom)) autoRom = {Path::active(), "game.z64"};
+    if(inode::exists(autoRom)) {
+      program.startGameLoad.push_back(autoRom);
+      if(!program.startPseudoFullScreen) program.startFullScreen = true;
     }
   }
 
