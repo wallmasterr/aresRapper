@@ -40,7 +40,7 @@ struct Settings : Markup::Node {
     bool overscan = false;
     bool pixelAccuracy = false;
 
-    string quality = "SD";
+    string quality = "HD";
     bool supersampling = false;
     bool disableVideoInterfaceProcessing = false;
     bool weaveDeinterlacing = true;

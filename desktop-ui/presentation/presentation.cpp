@@ -33,7 +33,6 @@ Presentation::Presentation() {
     setAssociatedFile();
     setBackgroundColor({0, 0, 0});
     setAlignment(Alignment::Center);
-    setVisible();
     return;
   }
 
@@ -336,7 +335,6 @@ Presentation::Presentation() {
   setAssociatedFile();
   setBackgroundColor({0, 0, 0});
   setAlignment(Alignment::Center);
-  setVisible();
 
   #if defined(PLATFORM_MACOS)
   Application::Cocoa::onAbout([&] { aboutAction.doActivate(); });

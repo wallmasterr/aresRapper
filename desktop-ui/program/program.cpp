@@ -17,10 +17,8 @@ auto Program::create() -> void {
   audioDriverUpdate();
   inputDriverUpdate();
 
-  if(kiosk) {
-    if(startFullScreen) videoFullScreenToggle();
-    if(startPseudoFullScreen) videoPseudoFullScreenToggle();
-  }
+  if(startFullScreen) videoFullScreenToggle();
+  if(startPseudoFullScreen) videoPseudoFullScreenToggle();
 
   _isRunning = true;
   worker = thread::create(std::bind_front(&Program::emulatorRunLoop, this));
@@ -33,12 +31,7 @@ auto Program::create() -> void {
     if(startSystem) {
       for(auto &emulator: emulators) {
         if(emulator->name == startSystem) {
-          if(load(emulator, gameToLoad)) {
-            if(!kiosk) {
-              if(startFullScreen) videoFullScreenToggle();
-              if(startPseudoFullScreen) videoPseudoFullScreenToggle();
-            }
-          }
+          load(emulator, gameToLoad);
           return;
         }
       }
@@ -46,12 +39,7 @@ auto Program::create() -> void {
     }
 
     if(auto emulator = identify(gameToLoad)) {
-      if(load(emulator, gameToLoad)) {
-        if(!kiosk) {
-          if(startFullScreen) videoFullScreenToggle();
-          if(startPseudoFullScreen) videoPseudoFullScreenToggle();
-        }
-      }
+      load(emulator, gameToLoad);
     }
   }
 }

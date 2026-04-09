@@ -60,7 +60,7 @@ struct Program : ares::Platform {
 
   auto driverInitFailed(nall::string& driver, const char* kind, auto&& updateSettingsWindow) -> void;
   
-  bool startFullScreen = false;
+  bool startFullScreen = true;
   bool startPseudoFullScreen = false;
   bool kiosk = false;
   std::vector<string> startGameLoad;

@@ -74,10 +74,14 @@ auto nall::main(Arguments arguments) -> void {
     return settings.paths.saves;
   });
 
+  if(arguments.take("--windowed")) {
+    program.startFullScreen = false;
+  }
   if(arguments.take("--fullscreen")) {
     program.startFullScreen = true;
   } else if(arguments.take("--pseudofullscreen")) {
     program.startPseudoFullScreen = true;
+    program.startFullScreen = false;
   }
 
   if(arguments.take("--kiosk")) {
@@ -143,7 +147,8 @@ auto nall::main(Arguments arguments) -> void {
 #if defined(PLATFORM_WINDOWS)
     print("  --terminal            Create new terminal window\n");
 #endif
-    print("  --fullscreen          Start in full screen mode\n");
+    print("  --fullscreen          Start in full screen mode (default unless --windowed)\n");
+    print("  --windowed            Start in a window (disable default full screen)\n");
     print("  --pseudofullscreen    Start in psuedo full screen mode\n");
     print("  --kiosk               Start in minimal UI mode (implies --no-file-prompt)\n");
     print("  --system name         Specify the system name\n");
@@ -155,8 +160,7 @@ auto nall::main(Arguments arguments) -> void {
     print("  --save-state slot     Specify a save state slot to load (1-9)\n");
     print("\n");
     print("If no game path is given, ares looks for game.z64 next to the executable,\n");
-    print("then in the current working directory, loads it when found, and starts fullscreen\n");
-    print("(unless --pseudofullscreen was set).\n");
+    print("then in the current working directory, and loads it when found.\n");
     print("\n");
     print("Available Systems:\n");
     print("  ");
@@ -199,7 +203,6 @@ auto nall::main(Arguments arguments) -> void {
     if(!inode::exists(autoRom)) autoRom = {Path::active(), "game.z64"};
     if(inode::exists(autoRom)) {
       program.startGameLoad.push_back(autoRom);
-      if(!program.startPseudoFullScreen) program.startFullScreen = true;
     }
   }
 
@@ -241,6 +244,7 @@ auto nall::main(Arguments arguments) -> void {
   }
 
   program.create();
+  presentation.setVisible();
   Application::onMain(std::bind_front(&Program::main, &program));
   Application::run();
 
