@@ -4,6 +4,11 @@ configure_file(ares/ares.cpp.in ares/ares.cpp @ONLY)
 
 add_library(ares::ares ALIAS ares)
 
+if(MSVC)
+  # Avoid C1041 on shared ares.pdb: MSBuild batching can spawn multiple cl.exe writers even with /FS.
+  set_property(TARGET ares PROPERTY VS_NO_COMPILE_BATCHING ON)
+endif()
+
 option(ARES_PROFILE_ACCURACY "Build to prefer emulation accuracy over performance in certain specific areas" OFF)
 option(ARES_PRECOMPILE_HEADERS "Precompile ares/ares.hpp header for performance" OFF)
 option(

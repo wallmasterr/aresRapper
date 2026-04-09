@@ -10,6 +10,7 @@
       "name": "baseCacheVars",
       "hidden": true,
       "cacheVariables": {
+        "ARES_CORES": {"type": "STRING", "value": "n64"},
         "ARES_PROFILE_ACCURACY": false,
         "ARES_BUILD_LOCAL": true,
         "ENABLE_CCACHE": true,

@@ -52,6 +52,7 @@ set(
   /wd4804 # unsafe use of bool in operation
   /wd4805 # unsafe mix of types in operation
   /MP
+  /FS # allow multiple cl.exe to write one PDB (required with /MP + shared ares.pdb; fixes C1041)
   /Zc:__cplusplus
   /Zc:char8_t-
   /utf-8
