@@ -1,4 +1,5 @@
 #include "../desktop-ui.hpp"
+#include "../wine-compat.hpp"
 #include <nall/vector-helpers.hpp>
 #include "video.cpp"
 #include "audio.cpp"
@@ -40,6 +41,15 @@ auto Settings::save() -> void {
 }
 
 auto Settings::process(bool load) -> void {
+#if defined(PLATFORM_WINDOWS)
+  bool hadVideoDriverKey = false;
+  if(load) {
+    if(auto node = operator[]("Video/Driver")) {
+      hadVideoDriverKey = true;
+      (void)node;
+    }
+  }
+#endif
   if(load) {
     //initialize non-static default settings
     video.driver = ruby::Video::optimalDriver();
@@ -190,6 +200,23 @@ auto Settings::process(bool load) -> void {
       bind(string, name, firmware.location);
     }
   }
+
+#if defined(PLATFORM_WINDOWS)
+  if(load && aresRunningUnderWineOrProton()) {
+    video.weaveDeinterlacing = false;
+    video.exclusive = false;
+    if(aresWineProtonLikelySteamDeck()) {
+      video.nativeFullScreen = false;
+      video.threadedRenderer = false;
+      video.blocking = true;
+      if(video.driver == "Direct3D 9.0") {
+        video.driver = "OpenGL 3.2";
+      }
+    } else if(!hadVideoDriverKey && video.driver == "OpenGL 3.2") {
+      video.driver = ruby::Video::safestDriver();
+    }
+  }
+#endif
 
   #undef bind
 }

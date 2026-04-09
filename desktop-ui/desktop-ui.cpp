@@ -1,4 +1,5 @@
 #include "desktop-ui.hpp"
+#include "wine-compat.hpp"
 
 namespace ruby {
   Video video;
@@ -74,14 +75,18 @@ auto nall::main(Arguments arguments) -> void {
     return settings.paths.saves;
   });
 
+  bool displayModeFromArgs = false;
   if(arguments.take("--windowed")) {
     program.startFullScreen = false;
+    displayModeFromArgs = true;
   }
   if(arguments.take("--fullscreen")) {
     program.startFullScreen = true;
+    displayModeFromArgs = true;
   } else if(arguments.take("--pseudofullscreen")) {
     program.startPseudoFullScreen = true;
     program.startFullScreen = false;
+    displayModeFromArgs = true;
   }
 
   if(arguments.take("--kiosk")) {
@@ -116,6 +121,12 @@ auto nall::main(Arguments arguments) -> void {
   Emulator::construct();
 
   settings.load();
+
+#if defined(PLATFORM_WINDOWS)
+  if(aresRunningUnderWineOrProton() && aresWineProtonLikelySteamDeck() && !displayModeFromArgs) {
+    program.startFullScreen = false;
+  }
+#endif
 
   if(arguments.find("--setting")) {
     string settingValue;
@@ -158,6 +169,11 @@ auto nall::main(Arguments arguments) -> void {
     print("  --no-file-prompt      Do not prompt to load (optional) additional roms (eg: 64DD)\n");
     print("  --settings-file path  Specify a settings file override (settings.bml)\n");
     print("  --save-state slot     Specify a save state slot to load (1-9)\n");
+#if defined(PLATFORM_WINDOWS)
+    print("\n");
+    print("Steam Deck / Proton: defaults to windowed + OpenGL (not D3D9), safer video flags.\n");
+    print("Override with --fullscreen or --windowed. Env: ARES_DISABLE_WINE_COMPAT=1 skips this.\n");
+#endif
     print("\n");
     print("If no game path is given, ares looks for game.z64 next to the executable,\n");
     print("then in the current working directory, and loads it when found.\n");

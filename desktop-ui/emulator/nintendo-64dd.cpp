@@ -1,3 +1,5 @@
+#include "../wine-compat.hpp"
+
 struct Nintendo64DD : Nintendo64 {
   Nintendo64DD();
   auto load() -> LoadResult override;
@@ -32,13 +34,13 @@ Nintendo64DD::Nintendo64DD() {
     device.digital("Right",   virtualPorts[id].pad.right);
     device.digital("B",       virtualPorts[id].pad.west);
     device.digital("A",       virtualPorts[id].pad.south);
-    device.digital("C-Up",    virtualPorts[id].pad.rstick_up);
-    device.digital("C-Down",  virtualPorts[id].pad.rstick_down);
-    device.digital("C-Left",  virtualPorts[id].pad.rstick_left);
-    device.digital("C-Right", virtualPorts[id].pad.rstick_right);
+    device.digital("C-Up",    virtualPorts[id].pad.r_trigger);
+    device.digital("C-Down",  virtualPorts[id].pad.east);
+    device.digital("C-Left",  virtualPorts[id].pad.north);
+    device.digital("C-Right", virtualPorts[id].pad.r_bumper);
     device.digital("L",       virtualPorts[id].pad.l_bumper);
     device.digital("R",       virtualPorts[id].pad.r_bumper);
-    device.digital("Z",       virtualPorts[id].pad.r_trigger);
+    device.digital("Z",       virtualPorts[id].pad.l_trigger);
     device.digital("Start",   virtualPorts[id].pad.start);
     device.rumble ("Rumble",  virtualPorts[id].pad.rumble);
     device.analog ("X-Axis",  virtualPorts[id].pad.lstick_left, virtualPorts[id].pad.lstick_right);
@@ -82,7 +84,13 @@ auto Nintendo64DD::load() -> LoadResult {
   ares::Nintendo64::option("Quality", settings.video.quality);
   ares::Nintendo64::option("Supersampling", settings.video.supersampling);
 #if defined(VULKAN)
-  ares::Nintendo64::option("Enable GPU acceleration", true);
+  {
+    bool gpu = true;
+#if defined(PLATFORM_WINDOWS)
+    if(aresWineDeckForceSoftwareN64Rdp()) gpu = false;
+#endif
+    ares::Nintendo64::option("Enable GPU acceleration", gpu);
+  }
 #else
   ares::Nintendo64::option("Enable GPU acceleration", false);
 #endif

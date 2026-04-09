@@ -1,3 +1,5 @@
+#include "../wine-compat.hpp"
+
 struct Arcade : Emulator {
   Arcade();
   auto load() -> LoadResult override;
@@ -111,7 +113,13 @@ auto Arcade::load() -> LoadResult {
     ares::Nintendo64::option("Quality", settings.video.quality);
     ares::Nintendo64::option("Supersampling", settings.video.supersampling);
 #if defined(VULKAN)
-    ares::Nintendo64::option("Enable GPU acceleration", true);
+    {
+      bool gpu = true;
+#if defined(PLATFORM_WINDOWS)
+      if(aresWineDeckForceSoftwareN64Rdp()) gpu = false;
+#endif
+      ares::Nintendo64::option("Enable GPU acceleration", gpu);
+    }
 #else
     ares::Nintendo64::option("Enable GPU acceleration", false);
 #endif

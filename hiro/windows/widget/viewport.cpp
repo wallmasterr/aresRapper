@@ -43,7 +43,10 @@ auto pViewport::windowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) ->
   }
 
   if(msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN || msg == WM_KEYUP || msg == WM_SYSKEYUP) {
-    if(self().focusable()) return true;
+    if(self().focusable()) {
+      const bool altF4 = (msg == WM_SYSKEYDOWN || msg == WM_SYSKEYUP) && wparam == VK_F4;
+      if(!altF4) return true;  // Alt+F4 must reach DefWindowProc (WM_CLOSE).
+    }
   }
 
   if(msg == WM_ERASEBKGND) {

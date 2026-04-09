@@ -69,7 +69,10 @@ auto pCanvas::windowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -> m
   }
 
   if(msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN || msg == WM_KEYUP || msg == WM_SYSKEYUP) {
-    if(self().focusable()) return true;
+    if(self().focusable()) {
+      const bool altF4 = (msg == WM_SYSKEYDOWN || msg == WM_SYSKEYUP) && wparam == VK_F4;
+      if(!altF4) return true;
+    }
   }
 
   if(msg == WM_GETDLGCODE) {
