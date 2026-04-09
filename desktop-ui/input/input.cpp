@@ -577,11 +577,11 @@ static auto applyXInputPreset(u64 id) -> void {
   p.start.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 5));
   p.select.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 4));
   p.l_bumper.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 6));
-  p.r_bumper.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 7));
+  p.r_bumper.bind(0, joyAssignment(id, HID::Joypad::GroupID::Trigger, 1, "Hi"));
   p.lstick_click.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 8));
   p.rstick_click.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 9));
   p.l_trigger.bind(0, joyAssignment(id, HID::Joypad::GroupID::Trigger, 0, "Hi"));
-  p.r_trigger.bind(0, joyAssignment(id, HID::Joypad::GroupID::Trigger, 1, "Hi"));
+  p.r_trigger.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 7));
   p.rumble.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 0));
 }
 
@@ -598,11 +598,11 @@ static auto applySdlMicrosoftXboxPreset(u64 id) -> void {
   p.start.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 7));
   p.select.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 6));
   p.l_bumper.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 4));
-  p.r_bumper.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 5));
+  p.r_bumper.bind(0, joyAssignment(id, HID::Joypad::GroupID::Axis, 5, "Hi"));
   p.lstick_click.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 8));
   p.rstick_click.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 9));
   p.l_trigger.bind(0, joyAssignment(id, HID::Joypad::GroupID::Axis, 2, "Hi"));
-  p.r_trigger.bind(0, joyAssignment(id, HID::Joypad::GroupID::Axis, 5, "Hi"));
+  p.r_trigger.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 5));
   p.rumble.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 0));
 }
 
@@ -622,11 +622,11 @@ static auto applySdlSteamDeckPreset(u64 id) -> void {
   p.start.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 6));
   p.select.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 15));
   p.l_bumper.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 9));
-  p.r_bumper.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 10));
+  p.r_bumper.bind(0, joyAssignment(id, HID::Joypad::GroupID::Axis, 9, "Hi"));
   p.lstick_click.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 7));
   p.rstick_click.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 8));
   p.l_trigger.bind(0, joyAssignment(id, HID::Joypad::GroupID::Axis, 8, "Hi"));
-  p.r_trigger.bind(0, joyAssignment(id, HID::Joypad::GroupID::Axis, 9, "Hi"));
+  p.r_trigger.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 10));
   p.rumble.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 3));
 }
 

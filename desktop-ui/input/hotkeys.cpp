@@ -178,6 +178,8 @@ auto InputManager::createHotkeys() -> void {
 }
 
 auto InputManager::pollHotkeys() -> void {
+  static bool unloadOnBackspaceHeld = false;
+
   if(Application::modal()) return;
   if(
     program.settingsWindowConstructed && settingsWindow.focused() ||
@@ -185,6 +187,36 @@ auto InputManager::pollHotkeys() -> void {
   ) return;
   if(settings.input.defocus != "Allow") {
     if (!presentation.focused() && !ruby::video.fullScreen()) return;
+  }
+
+  if(emulator && !program.keyboardCaptured) {
+    bool backspaceDown = false;
+    {
+      lock_guard<recursive_mutex> inputLock(program.inputMutex);
+      for(auto& device : inputManager.devices) {
+        if(!device->isKeyboard()) continue;
+        const u32 g = HID::Keyboard::GroupID::Button;
+        auto& group = device->group(g);
+        for(u32 i : range(group.size())) {
+          if(group.input(i).name() == "Backspace") {
+            backspaceDown = group.input(i).value() != 0;
+            break;
+          }
+        }
+        if(backspaceDown) break;
+      }
+    }
+    if(backspaceDown) {
+      if(!unloadOnBackspaceHeld) {
+        unloadOnBackspaceHeld = true;
+        program.unload();
+        return;
+      }
+    } else {
+      unloadOnBackspaceHeld = false;
+    }
+  } else {
+    unloadOnBackspaceHeld = false;
   }
 
   for(auto& hotkey : hotkeys) {
