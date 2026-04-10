@@ -59,6 +59,8 @@ struct Program : ares::Platform {
   auto inputDriverUpdate() -> void;
 
   auto applyFrameSkipVideoPolicy() -> void;
+  auto enterFastForward() -> void;
+  auto exitFastForward() -> void;
 
   auto driverInitFailed(nall::string& driver, const char* kind, auto&& updateSettingsWindow) -> void;
   
@@ -79,14 +81,20 @@ struct Program : ares::Platform {
   std::vector<ares::Node::Audio::Stream> streams;
 
   u32 videoFrameSkipCounter = 0;
+  u64 fastForwardPaceNextNs = 0;
+  f64 emulatedRefreshRate = 60.0;
 
   bool paused = false;
   bool fastForwarding = false;
+  bool fastForwardRestoreVideoBlocking = true;
+  bool fastForwardRestoreAudioBlocking = true;
+  bool fastForwardRestoreAudioDynamic = true;
   bool rewinding = false;
   bool runAhead = false;
   bool requestFrameAdvance = false;
   bool requestScreenshot = false;
   bool keyboardCaptured = false;
+  bool showFullscreenFpsCounter = false;
   atomic<bool> pendingKioskExit = false;
 
   struct State {

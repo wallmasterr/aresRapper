@@ -40,6 +40,34 @@ auto OptionSettings::construct() -> void {
   frameSkipLayout.setAlignment(1).setPadding(12_sx, 0);
     frameSkipHint.setText("Skips some GPU uploads for higher speed; emulation still advances every frame. Video sync is off while active.").setFont(Font().setSize(7.0)).setForegroundColor(SystemColor::Sublabel);
 
+  if(settings.general.fastForwardSpeed != "Unlimited" && settings.general.fastForwardSpeed != "1.5x"
+  && settings.general.fastForwardSpeed != "2x" && settings.general.fastForwardSpeed != "3x") {
+    settings.general.fastForwardSpeed = "1.5x";
+  }
+  fastForwardSpeedLabel.setText("Fast forward speed:");
+  for(auto text : array<string[4]>{"Unlimited", "1.5x", "2x", "3x"}) {
+    ComboButtonItem item{&fastForwardSpeedOption};
+    item.setText(text);
+    if(text == settings.general.fastForwardSpeed) item.setSelected();
+  }
+  fastForwardSpeedOption.onChange([&] {
+    for(u32 i : range(fastForwardSpeedOption.itemCount())) {
+      if(fastForwardSpeedOption.item(i).selected()) {
+        settings.general.fastForwardSpeed = fastForwardSpeedOption.item(i).text();
+        program.fastForwardPaceNextNs = 0;
+        break;
+      }
+    }
+  });
+  fastForwardSpeedLayout.setAlignment(1).setPadding(12_sx, 0);
+    fastForwardSpeedHint.setText("Caps Fast Forward using the core video refresh hint (e.g. 1.5x is about 90 VPS at 60 Hz). Unlimited removes the cap.").setFont(Font().setSize(7.0)).setForegroundColor(SystemColor::Sublabel);
+
+  autoFastForwardOption.setText("Fast Forward when a game loads").setChecked(settings.general.autoFastForward).onToggle([&] {
+    settings.general.autoFastForward = autoFastForwardOption.checked();
+  }).doToggle();
+  autoFastForwardLayout.setAlignment(1).setPadding(12_sx, 0);
+    autoFastForwardHint.setText("Starts each session in Fast Forward at the speed chosen above (default 1.5x). Turn off with Toggle Fast Forward or the Fast Forward key.").setFont(Font().setSize(7.0)).setForegroundColor(SystemColor::Sublabel);
+
   autoSaveMemory.setText("Auto-Save Memory Periodically").setChecked(settings.general.autoSaveMemory).onToggle([&] {
     settings.general.autoSaveMemory = autoSaveMemory.checked();
   });

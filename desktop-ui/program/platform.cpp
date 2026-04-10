@@ -28,18 +28,12 @@ auto Program::pak(ares::Node::Object node) -> std::shared_ptr<vfs::directory> {
 
 auto Program::event(ares::Event event) -> void {
   if(event == ares::Event::FastForwardOn) {
-    fastForwarding = true;
-    ruby::video.setBlocking(false);
-    ruby::audio.setBlocking(false);
-    ruby::audio.setDynamic(false);
+    enterFastForward();
     return;
   }
 
   if(event == ares::Event::FastForwardOff) {
-    fastForwarding = false;
-    applyFrameSkipVideoPolicy();
-    ruby::audio.setBlocking(true);
-    ruby::audio.setDynamic(true);
+    exitFastForward();
     return;
   }
 
@@ -156,6 +150,7 @@ auto Program::video(ares::Node::Video::Screen node, const u32* data, u32 pitch, 
 }
 
 auto Program::refreshRateHint(double refreshRate) -> void {
+  if(refreshRate > 0.5 && refreshRate < 1000.0) emulatedRefreshRate = refreshRate;
   ruby::video.refreshRateHint(refreshRate);
 }
 

@@ -1,7 +1,4 @@
 auto InputManager::createHotkeys() -> void {
-  static bool fastForwardVideoBlocking;
-  static bool fastForwardAudioBlocking;
-  static bool fastForwardAudioDynamic;
   static bool toggleFastForwardState = false;
 
   hotkeys.push_back(InputHotkey("Toggle Fullscreen").onPress([&] {
@@ -33,47 +30,26 @@ auto InputManager::createHotkeys() -> void {
     Program::Guard guard;
     if(!emulator || program.rewinding) return;
     if(!toggleFastForwardState) {
-      program.fastForwarding = true;
-      fastForwardVideoBlocking = ruby::video.blocking();
-      fastForwardAudioBlocking = ruby::audio.blocking();
-      fastForwardAudioDynamic  = ruby::audio.dynamic();
-      ruby::video.setBlocking(false);
-      ruby::audio.setBlocking(false);
-      ruby::audio.setDynamic(false);
+      program.enterFastForward();
     }
   }).onRelease([&] {
     Program::Guard guard;
     if(!emulator) return;
     if(!toggleFastForwardState) {
-      program.fastForwarding = false;
-      ruby::video.setBlocking(fastForwardVideoBlocking);
-      if(settings.general.frameSkip > 0) ruby::video.setBlocking(false);
-      ruby::audio.setBlocking(fastForwardAudioBlocking);
-      ruby::audio.setDynamic(fastForwardAudioDynamic);
+      program.exitFastForward();
     }
   }));
 
   hotkeys.push_back(InputHotkey("Toggle Fast Forward").onPress([&] {
     Program::Guard guard;
     if(!emulator || program.rewinding) return;
-    program.fastForwarding = !program.fastForwarding;
-
-    if (program.fastForwarding) {
+    if(program.fastForwarding) {
+      program.exitFastForward();
+      toggleFastForwardState = false;
+    } else {
+      program.enterFastForward();
       toggleFastForwardState = true;
-      fastForwardVideoBlocking = ruby::video.blocking();
-      fastForwardAudioBlocking = ruby::audio.blocking();
-      fastForwardAudioDynamic  = ruby::audio.dynamic();
-      ruby::video.setBlocking(false);
-      ruby::audio.setBlocking(false);
-      ruby::audio.setDynamic(false);
-      return;
-    } 
-
-    toggleFastForwardState = false;
-    ruby::video.setBlocking(fastForwardVideoBlocking);
-    if(settings.general.frameSkip > 0) ruby::video.setBlocking(false);
-    ruby::audio.setBlocking(fastForwardAudioBlocking);
-    ruby::audio.setDynamic(fastForwardAudioDynamic);
+    }
   }));
 
   hotkeys.push_back(InputHotkey("Rewind").onPress([&] {
@@ -181,6 +157,7 @@ auto InputManager::createHotkeys() -> void {
 
 auto InputManager::pollHotkeys() -> void {
   static bool quitOnBackspaceHeld = false;
+  static bool fullscreenFpsFToggleHeld = false;
 
   if(Application::modal()) return;
   if(
@@ -189,6 +166,36 @@ auto InputManager::pollHotkeys() -> void {
   ) return;
   if(settings.input.defocus != "Allow") {
     if (!presentation.focused() && !ruby::video.fullScreen()) return;
+  }
+
+  bool fullscreen = ruby::video.fullScreen() || presentation.fullScreen();
+  if(fullscreen && !program.keyboardCaptured) {
+    bool fDown = false;
+    {
+      lock_guard<recursive_mutex> inputLock(program.inputMutex);
+      for(auto& device : inputManager.devices) {
+        if(!device->isKeyboard()) continue;
+        const u32 g = HID::Keyboard::GroupID::Button;
+        auto& group = device->group(g);
+        for(u32 i : range(group.size())) {
+          if(group.input(i).name() == "F") {
+            fDown = group.input(i).value() != 0;
+            break;
+          }
+        }
+        if(fDown) break;
+      }
+    }
+    if(fDown) {
+      if(!fullscreenFpsFToggleHeld) {
+        fullscreenFpsFToggleHeld = true;
+        program.showFullscreenFpsCounter = !program.showFullscreenFpsCounter;
+      }
+    } else {
+      fullscreenFpsFToggleHeld = false;
+    }
+  } else {
+    fullscreenFpsFToggleHeld = false;
   }
 
   if(emulator && !program.keyboardCaptured) {

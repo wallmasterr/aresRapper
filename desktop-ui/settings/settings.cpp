@@ -116,6 +116,8 @@ auto Settings::process(bool load) -> void {
   bind(boolean, "General/Rewind", general.rewind);
   bind(boolean, "General/RunAhead", general.runAhead);
   bind(natural, "General/FrameSkip", general.frameSkip);
+  bind(string,  "General/FastForwardSpeed", general.fastForwardSpeed);
+  bind(boolean, "General/AutoFastForward", general.autoFastForward);
   bind(boolean, "General/AutoSaveMemory", general.autoSaveMemory);
   bind(boolean, "General/HomebrewMode", general.homebrewMode);
   bind(boolean, "General/ForceInterpreter", general.forceInterpreter);

@@ -6,6 +6,7 @@ Presentation& presentation = Instances::presentation();
 
 Presentation::Presentation() {
   if(program.kiosk) {
+    fpsColumnLayout.setCollapsible().setVisible(false);
     iconLayout.setCollapsible();
     viewport.setDroppable().onDrop([&](std::vector<string> filenames) {
       Program::Guard guard;
@@ -292,6 +293,9 @@ Presentation::Presentation() {
   });
 
   iconLayout.setCollapsible();
+
+  fpsColumnLayout.setCollapsible().setVisible(false).setAlignment(0.0);
+  fpsOverlay.setBackgroundColor({32, 32, 32}).setForegroundColor({255, 255, 255}).setFont(Font().setBold()).setAlignment({0.0, 0.0});
 
   iconSpacer.setCollapsible().setColor({0, 0, 0}).setDroppable().onDrop([&](auto filenames) {
     viewport.doDrop(filenames);
@@ -810,5 +814,25 @@ auto Presentation::loadShaders() -> void {
       settings.video.shader = item.attribute("file");
       ruby::video.setShader({location, settings.video.shader});
     }
+  }
+}
+
+auto Presentation::updateFpsOverlay() -> void {
+  if(program.kiosk) return;
+  bool fs = ruby::video.fullScreen() || fullScreen();
+  if(!fs || !program.showFullscreenFpsCounter) {
+    fpsColumnLayout.setVisible(false);
+    return;
+  }
+  fpsColumnLayout.setVisible(true);
+  u64 vps = program.vblanksPerSecond.load();
+  if(emulator && vps > 0 && !program.paused) {
+    fpsOverlay.setText({vps, " FPS"});
+  } else if(emulator && program.paused) {
+    fpsOverlay.setText("paused");
+  } else if(emulator) {
+    fpsOverlay.setText("0 FPS");
+  } else {
+    fpsOverlay.setText("--");
   }
 }

@@ -282,27 +282,35 @@ auto Emulator::input(ares::Node::Input::Input input) -> void {
     if(inputPort.name != port->name()) continue;
     for(auto& inputDevice : inputPort.devices) {
       if(inputDevice.name != device->name()) continue;
+      if(auto button = input->cast<ares::Node::Input::Button>()) {
+        bool any = false;
+        for(auto& inputNode : inputDevice.inputs) {
+          if(inputNode.name != input->name()) continue;
+          any |= inputNode.mapping->pressed();
+        }
+        return button->setValue(any);
+      }
+      if(auto axis = input->cast<ares::Node::Input::Axis>()) {
+        s32 sum = 0;
+        u32 count = 0;
+        for(auto& inputNode : inputDevice.inputs) {
+          if(inputNode.name != input->name()) continue;
+          sum += inputNode.mapping->value();
+          count++;
+        }
+        for(auto& inputPair : inputDevice.pairs) {
+          if(inputPair.name != input->name()) continue;
+          sum += inputPair.mappingHi->value() - inputPair.mappingLo->value();
+          count++;
+        }
+        if(count) return axis->setValue(sclamp<16>(sum));
+      }
       for(auto& inputNode : inputDevice.inputs) {
         if(inputNode.name != input->name()) continue;
-        if(auto button = input->cast<ares::Node::Input::Button>()) {
-          auto pressed = inputNode.mapping->pressed();
-          return button->setValue(pressed);
-        }
-        if(auto axis = input->cast<ares::Node::Input::Axis>()) {
-          auto value = inputNode.mapping->value();
-          return axis->setValue(value);
-        }
         if(auto rumble = input->cast<ares::Node::Input::Rumble>()) {
           if(auto target = dynamic_cast<InputRumble*>(inputNode.mapping)) {
             return target->rumble(rumble->strongValue(), rumble->weakValue());
           }
-        }
-      }
-      for(auto& inputPair : inputDevice.pairs) {
-        if(inputPair.name != input->name()) continue;
-        if(auto axis = input->cast<ares::Node::Input::Axis>()) {
-          auto value = inputPair.mappingHi->value() - inputPair.mappingLo->value();
-          return axis->setValue(value);
         }
       }
     }

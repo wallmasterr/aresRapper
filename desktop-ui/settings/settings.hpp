@@ -81,7 +81,10 @@ struct Settings : Markup::Node {
     bool forceInterpreter = false;
     bool noFilePrompt = false;
     // 0 = draw every emulated frame; N = upload only every (N+1)th frame (faster, choppier).
-    u32 frameSkip = 2;
+    u32 frameSkip = 0;
+    // Fast Forward hotkey: "Unlimited" = run as fast as possible; "1.5x" etc. = cap vs emulated refresh rate.
+    string fastForwardSpeed = "1.5x";
+    bool autoFastForward = false;
   } general;
 
   struct Rewind {
@@ -271,6 +274,13 @@ struct OptionSettings : VerticalLayout {
       Label frameSkipLabel{&frameSkipLayout, Size{0, layoutVertSize}};
       ComboButton frameSkipOption{&frameSkipLayout, Size{0, 0}};
       Label frameSkipHint{&frameSkipLayout, Size{0, layoutVertSize}};
+    HorizontalLayout fastForwardSpeedLayout{this, Size{~0, 0}, 5};
+      Label fastForwardSpeedLabel{&fastForwardSpeedLayout, Size{0, layoutVertSize}};
+      ComboButton fastForwardSpeedOption{&fastForwardSpeedLayout, Size{0, 0}};
+      Label fastForwardSpeedHint{&fastForwardSpeedLayout, Size{0, layoutVertSize}};
+    HorizontalLayout autoFastForwardLayout{this, Size{~0, 0}, 5};
+      CheckLabel autoFastForwardOption{&autoFastForwardLayout, Size{0, 0}, 5};
+      Label autoFastForwardHint{&autoFastForwardLayout, Size{~0, layoutVertSize}};
     HorizontalLayout autoSaveMemoryLayout{this, Size{~0, 0}, 5};
       CheckLabel autoSaveMemory{&autoSaveMemoryLayout, Size{0, 0}, 5};
       Label autoSaveMemoryHint{&autoSaveMemoryLayout, Size{~0, layoutVertSize}};

@@ -10,6 +10,18 @@
 Program program;
 thread worker;
 
+namespace {
+
+auto fastForwardSpeedMultiplier() -> f64 {
+  const string& s = settings.general.fastForwardSpeed;
+  if(s == "1.5x") return 1.5;
+  if(s == "2x") return 2.0;
+  if(s == "3x") return 3.0;
+  return 0.0;
+}
+
+}  // namespace
+
 auto Program::create() -> void {
   ares::platform = this;
 
@@ -85,6 +97,31 @@ auto Program::emulatorRunLoop(uintptr_t) -> void {
     nall::GDB::server.updateLoop();
 
     program.requestFrameAdvance = false;
+
+    if(fastForwarding) {
+      if(f64 mult = fastForwardSpeedMultiplier()) {
+        f64 hz = emulatedRefreshRate;
+        if(hz < 1.0) hz = 60.0;
+        const u64 frameNs = (u64)(1'000'000'000.0 / (hz * mult));
+        u64 now = chrono::nanosecond();
+        if(fastForwardPaceNextNs == 0) fastForwardPaceNextNs = now;
+        if(now < fastForwardPaceNextNs) {
+          u64 sleepNs = fastForwardPaceNextNs - now;
+          if(sleepNs > frameNs * 10) sleepNs = frameNs;
+          u64 sleepUs = sleepNs / 1000;
+          if(sleepUs > 2'000'000) sleepUs = 2'000'000;
+          if(sleepUs > 0) usleep((unsigned)sleepUs);
+        }
+        now = chrono::nanosecond();
+        fastForwardPaceNextNs += frameNs;
+        if(now > fastForwardPaceNextNs + frameNs * 4) fastForwardPaceNextNs = now + frameNs;
+      } else {
+        fastForwardPaceNextNs = 0;
+      }
+    } else {
+      fastForwardPaceNextNs = 0;
+    }
+
     if(!runAhead || fastForwarding || rewinding) {
       emulator->root->run();
     } else {
@@ -131,6 +168,7 @@ auto Program::main() -> void {
   inputManager.pollHotkeys();
 
   updateMessage();
+  presentation.updateFpsOverlay();
 
   //If Platform::video() changed the screen resolution, resize the presentation window here.
   //Window operations must be performed from the main thread.

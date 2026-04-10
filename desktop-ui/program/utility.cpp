@@ -10,6 +10,30 @@ auto Program::pause(bool state) -> void {
   }
 }
 
+auto Program::enterFastForward() -> void {
+  Program::Guard guard;
+  if(fastForwarding) return;
+  fastForwardRestoreVideoBlocking = ruby::video.blocking();
+  fastForwardRestoreAudioBlocking = ruby::audio.blocking();
+  fastForwardRestoreAudioDynamic = ruby::audio.dynamic();
+  fastForwarding = true;
+  fastForwardPaceNextNs = 0;
+  ruby::video.setBlocking(false);
+  ruby::audio.setBlocking(false);
+  ruby::audio.setDynamic(false);
+}
+
+auto Program::exitFastForward() -> void {
+  Program::Guard guard;
+  if(!fastForwarding) return;
+  fastForwarding = false;
+  fastForwardPaceNextNs = 0;
+  ruby::video.setBlocking(fastForwardRestoreVideoBlocking);
+  if(settings.general.frameSkip > 0) ruby::video.setBlocking(false);
+  ruby::audio.setBlocking(fastForwardRestoreAudioBlocking);
+  ruby::audio.setDynamic(fastForwardRestoreAudioDynamic);
+}
+
 auto Program::mute() -> void {
   Program::Guard guard;
   settings.audio.mute = !settings.audio.mute;

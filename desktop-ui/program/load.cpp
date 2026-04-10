@@ -123,12 +123,18 @@ auto Program::load(string location) -> bool {
 
   applyFrameSkipVideoPolicy();
 
+  if(settings.general.autoFastForward) {
+    enterFastForward();
+  }
+
   return true;
 }
 
 auto Program::unload() -> void {
   Program::Guard guard;
   if(!emulator) return;
+
+  exitFastForward();
 
   nall::GDB::server.close();
   nall::GDB::server.reset();
@@ -160,5 +166,6 @@ auto Program::unload() -> void {
   ruby::audio.clear();
 
   videoFrameSkipCounter = 0;
+  fastForwardPaceNextNs = 0;
   applyFrameSkipVideoPolicy();
 }

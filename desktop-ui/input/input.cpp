@@ -505,8 +505,16 @@ static auto assignmentDeviceConnected(const string& assignment) -> bool {
   return false;
 }
 
-static auto port0GamepadAutoMapNeeded() -> bool {
-  return !assignmentDeviceConnected(virtualPorts[0].pad.south.assignments[0]);
+static auto assignmentDeviceId(const string& assignment) -> u64 {
+  if(!assignment) return 0;
+  auto token = nall::split(assignment, "/");
+  if(token.size() < 1) return 0;
+  return token[0].natural();
+}
+
+static auto portGamepadAutoMapNeeded(u32 portIndex) -> bool {
+  if(portIndex >= 5) return false;
+  return !assignmentDeviceConnected(virtualPorts[portIndex].pad.south.assignments[0]);
 }
 
 static auto detectXboxStyleLayout(const std::shared_ptr<HID::Joypad>& j) -> XboxStyleLayout {
@@ -535,8 +543,9 @@ static auto detectXboxStyleLayout(const std::shared_ptr<HID::Joypad>& j) -> Xbox
   return XboxStyleLayout::None;
 }
 
-static auto clearVirtualPort0Pad() -> void {
-  auto& pad = virtualPorts[0].pad;
+static auto clearVirtualPortPad(u32 portIndex) -> void {
+  if(portIndex >= 5) return;
+  auto& pad = virtualPorts[portIndex].pad;
   for(auto& input : pad.inputs) input.mapping->unbind();
   for(auto& pair : pad.pairs) {
     pair.mappingLo->unbind();
@@ -565,8 +574,7 @@ static auto bindRightStickXY(VirtualPad& p, u64 id, u32 axisX, u32 axisY) -> voi
   p.rstick_down.bind(0, joyAssignment(id, HID::Joypad::GroupID::Axis, axisY, "Hi"));
 }
 
-static auto applyXInputPreset(u64 id) -> void {
-  auto& p = virtualPorts[0].pad;
+static auto applyXInputPreset(VirtualPad& p, u64 id) -> void {
   bindHatDpad(p, id);
   bindLeftStickXY(p, id, 0, 1);
   bindRightStickXY(p, id, 2, 3);
@@ -586,8 +594,7 @@ static auto applyXInputPreset(u64 id) -> void {
 }
 
 // Linux/SDL Xbox 360 class mapping: sticks on 0/1 and 3/4, LT axis 2, RT axis 5.
-static auto applySdlMicrosoftXboxPreset(u64 id) -> void {
-  auto& p = virtualPorts[0].pad;
+static auto applySdlMicrosoftXboxPreset(VirtualPad& p, u64 id) -> void {
   bindHatDpad(p, id);
   bindLeftStickXY(p, id, 0, 1);
   bindRightStickXY(p, id, 3, 4);
@@ -607,8 +614,7 @@ static auto applySdlMicrosoftXboxPreset(u64 id) -> void {
 }
 
 // SDL indices aligned with common Steam Deck / gamecontrollerdb joystick layouts.
-static auto applySdlSteamDeckPreset(u64 id) -> void {
-  auto& p = virtualPorts[0].pad;
+static auto applySdlSteamDeckPreset(VirtualPad& p, u64 id) -> void {
   p.up.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 11));
   p.down.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 12));
   p.left.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 13));
@@ -630,24 +636,66 @@ static auto applySdlSteamDeckPreset(u64 id) -> void {
   p.rumble.bind(0, joyAssignment(id, HID::Joypad::GroupID::Button, 3));
 }
 
-static auto tryApplyStandardGamepadDefaults() -> bool {
-  if(!port0GamepadAutoMapNeeded()) return false;
+struct XboxStyleJoypad {
+  u64 id = 0;
+  XboxStyleLayout layout = XboxStyleLayout::None;
+};
+
+static auto collectXboxStyleJoypads(std::vector<XboxStyleJoypad>& out) -> void {
+  out.clear();
   for(auto& dev : inputManager.devices) {
     if(!dev->isJoypad()) continue;
     auto joy = std::static_pointer_cast<HID::Joypad>(dev);
     const auto layout = detectXboxStyleLayout(joy);
     if(layout == XboxStyleLayout::None) continue;
-
-    clearVirtualPort0Pad();
-    const u64 id = joy->id();
-    if(layout == XboxStyleLayout::XInput) applyXInputPreset(id);
-    else if(layout == XboxStyleLayout::SdlMicrosoft) applySdlMicrosoftXboxPreset(id);
-    else if(layout == XboxStyleLayout::SdlSteamDeck) applySdlSteamDeckPreset(id);
-
-    settings.save();
-    return true;
+    out.push_back({joy->id(), layout});
   }
-  return false;
+}
+
+static auto applyPresetForLayout(VirtualPad& p, XboxStyleLayout layout, u64 id) -> void {
+  if(layout == XboxStyleLayout::XInput) applyXInputPreset(p, id);
+  else if(layout == XboxStyleLayout::SdlMicrosoft) applySdlMicrosoftXboxPreset(p, id);
+  else if(layout == XboxStyleLayout::SdlSteamDeck) applySdlSteamDeckPreset(p, id);
+}
+
+static auto tryApplyStandardGamepadDefaults() -> bool {
+  const bool needP0 = portGamepadAutoMapNeeded(0);
+  const bool needP1 = portGamepadAutoMapNeeded(1);
+  if(!needP0 && !needP1) return false;
+
+  std::vector<XboxStyleJoypad> joypads;
+  collectXboxStyleJoypads(joypads);
+  if(joypads.empty()) return false;
+
+  auto firstJoypadNotId = [&](u64 excludeId) -> const XboxStyleJoypad* {
+    for(auto& j : joypads) {
+      if(j.id != excludeId) return &j;
+    }
+    return nullptr;
+  };
+
+  bool changed = false;
+  u64 excludeForPlayer2 = 0;
+
+  if(needP0) {
+    clearVirtualPortPad(0);
+    applyPresetForLayout(virtualPorts[0].pad, joypads[0].layout, joypads[0].id);
+    excludeForPlayer2 = joypads[0].id;
+    changed = true;
+  } else if(assignmentDeviceConnected(virtualPorts[0].pad.south.assignments[0])) {
+    excludeForPlayer2 = assignmentDeviceId(virtualPorts[0].pad.south.assignments[0]);
+  }
+
+  if(needP1) {
+    if(const XboxStyleJoypad* choice = firstJoypadNotId(excludeForPlayer2)) {
+      clearVirtualPortPad(1);
+      applyPresetForLayout(virtualPorts[1].pad, choice->layout, choice->id);
+      changed = true;
+    }
+  }
+
+  if(changed) settings.save();
+  return changed;
 }
 
 }  // namespace

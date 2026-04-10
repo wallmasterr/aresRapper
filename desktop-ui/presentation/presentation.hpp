@@ -9,6 +9,7 @@ struct Presentation : Window {
   auto showIcon(bool visible) -> void;
   auto loadShaders() -> void;
   auto refreshSystemMenu() -> void;
+  auto updateFpsOverlay() -> void;
 
   std::vector<string> shaderDirectories;
   static inline bool shaderArgApplied = false;
@@ -86,6 +87,8 @@ struct Presentation : Window {
 
   VerticalLayout layout{this};
     HorizontalLayout viewportLayout{&layout, Size{~0, ~0}, 0};
+      VerticalLayout fpsColumnLayout{&viewportLayout, Size{120, ~0}, 0};
+        Label fpsOverlay{&fpsColumnLayout, Size{~0, 0}, 5};
       Viewport viewport{&viewportLayout, Size{~0, ~0}, 0};
       VerticalLayout iconLayout{&viewportLayout, Size{144, ~0}, 0};
         Canvas iconSpacer{&iconLayout, Size{144, ~0}, 0};

@@ -26,6 +26,12 @@ Nintendo64::Nintendo64() {
     device.analog ("L-Down",  virtualPorts[id].pad.lstick_down);
     device.analog ("L-Left",  virtualPorts[id].pad.lstick_left);
     device.analog ("L-Right", virtualPorts[id].pad.lstick_right);
+    if(id == 1) {
+      device.analog ("L-Up",    virtualPorts[0].pad.rstick_up);
+      device.analog ("L-Down",  virtualPorts[0].pad.rstick_down);
+      device.analog ("L-Left",  virtualPorts[0].pad.rstick_left);
+      device.analog ("L-Right", virtualPorts[0].pad.rstick_right);
+    }
     device.digital("Up",      virtualPorts[id].pad.up);
     device.digital("Down",    virtualPorts[id].pad.down);
     device.digital("Left",    virtualPorts[id].pad.left);
@@ -43,6 +49,10 @@ Nintendo64::Nintendo64() {
     device.rumble ("Rumble",  virtualPorts[id].pad.rumble);
     device.analog ("X-Axis",  virtualPorts[id].pad.lstick_left, virtualPorts[id].pad.lstick_right);
     device.analog ("Y-Axis",  virtualPorts[id].pad.lstick_up,   virtualPorts[id].pad.lstick_down);
+    if(id == 1) {
+      device.analog ("X-Axis",  virtualPorts[0].pad.rstick_left, virtualPorts[0].pad.rstick_right);
+      device.analog ("Y-Axis",  virtualPorts[0].pad.rstick_up,   virtualPorts[0].pad.rstick_down);
+    }
     port.append(device); }
 
   { InputDevice device{"Mouse"};
