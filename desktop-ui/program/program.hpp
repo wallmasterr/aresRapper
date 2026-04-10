@@ -58,6 +58,8 @@ struct Program : ares::Platform {
 
   auto inputDriverUpdate() -> void;
 
+  auto applyFrameSkipVideoPolicy() -> void;
+
   auto driverInitFailed(nall::string& driver, const char* kind, auto&& updateSettingsWindow) -> void;
   
   bool startFullScreen = true;
@@ -75,6 +77,8 @@ struct Program : ares::Platform {
 
   std::vector<ares::Node::Video::Screen> screens;
   std::vector<ares::Node::Audio::Stream> streams;
+
+  u32 videoFrameSkipCounter = 0;
 
   bool paused = false;
   bool fastForwarding = false;

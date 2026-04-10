@@ -80,6 +80,8 @@ struct Settings : Markup::Node {
     bool homebrewMode = false;
     bool forceInterpreter = false;
     bool noFilePrompt = false;
+    // 0 = draw every emulated frame; N = upload only every (N+1)th frame (faster, choppier).
+    u32 frameSkip = 2;
   } general;
 
   struct Rewind {
@@ -265,6 +267,10 @@ struct OptionSettings : VerticalLayout {
     HorizontalLayout runAheadLayout{this, Size{~0, 0}, 5};
       CheckLabel runAhead{&runAheadLayout, Size{0, 0}, 5};
       Label runAheadHint{&runAheadLayout, Size{~0, layoutVertSize}};
+    HorizontalLayout frameSkipLayout{this, Size{~0, 0}, 5};
+      Label frameSkipLabel{&frameSkipLayout, Size{0, layoutVertSize}};
+      ComboButton frameSkipOption{&frameSkipLayout, Size{0, 0}};
+      Label frameSkipHint{&frameSkipLayout, Size{0, layoutVertSize}};
     HorizontalLayout autoSaveMemoryLayout{this, Size{~0, 0}, 5};
       CheckLabel autoSaveMemory{&autoSaveMemoryLayout, Size{0, 0}, 5};
       Label autoSaveMemoryHint{&autoSaveMemoryLayout, Size{~0, layoutVertSize}};

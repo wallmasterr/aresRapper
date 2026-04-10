@@ -47,6 +47,7 @@ auto InputManager::createHotkeys() -> void {
     if(!toggleFastForwardState) {
       program.fastForwarding = false;
       ruby::video.setBlocking(fastForwardVideoBlocking);
+      if(settings.general.frameSkip > 0) ruby::video.setBlocking(false);
       ruby::audio.setBlocking(fastForwardAudioBlocking);
       ruby::audio.setDynamic(fastForwardAudioDynamic);
     }
@@ -70,6 +71,7 @@ auto InputManager::createHotkeys() -> void {
 
     toggleFastForwardState = false;
     ruby::video.setBlocking(fastForwardVideoBlocking);
+    if(settings.general.frameSkip > 0) ruby::video.setBlocking(false);
     ruby::audio.setBlocking(fastForwardAudioBlocking);
     ruby::audio.setDynamic(fastForwardAudioDynamic);
   }));
@@ -178,7 +180,7 @@ auto InputManager::createHotkeys() -> void {
 }
 
 auto InputManager::pollHotkeys() -> void {
-  static bool unloadOnBackspaceHeld = false;
+  static bool quitOnBackspaceHeld = false;
 
   if(Application::modal()) return;
   if(
@@ -207,16 +209,16 @@ auto InputManager::pollHotkeys() -> void {
       }
     }
     if(backspaceDown) {
-      if(!unloadOnBackspaceHeld) {
-        unloadOnBackspaceHeld = true;
-        program.unload();
+      if(!quitOnBackspaceHeld) {
+        quitOnBackspaceHeld = true;
+        program.quit();
         return;
       }
     } else {
-      unloadOnBackspaceHeld = false;
+      quitOnBackspaceHeld = false;
     }
   } else {
-    unloadOnBackspaceHeld = false;
+    quitOnBackspaceHeld = false;
   }
 
   for(auto& hotkey : hotkeys) {

@@ -121,6 +121,8 @@ auto Program::load(string location) -> bool {
     }
   }
 
+  applyFrameSkipVideoPolicy();
+
   return true;
 }
 
@@ -156,4 +158,7 @@ auto Program::unload() -> void {
   configuration = "";
   ruby::video.clear();
   ruby::audio.clear();
+
+  videoFrameSkipCounter = 0;
+  applyFrameSkipVideoPolicy();
 }

@@ -37,7 +37,7 @@ auto Program::event(ares::Event event) -> void {
 
   if(event == ares::Event::FastForwardOff) {
     fastForwarding = false;
-    ruby::video.setBlocking(true);
+    applyFrameSkipVideoPolicy();
     ruby::audio.setBlocking(true);
     ruby::audio.setDynamic(true);
     return;
@@ -91,6 +91,17 @@ auto Program::video(ares::Node::Video::Screen node, const u32* data, u32 pitch, 
     emulator->latch.rotation = node->rotation();
     emulator->latch.changed = true;  //signal Program::main() to potentially resize the presentation window
   }
+
+  bool uploadFrame = true;
+  const u32 skipN = min<u32>(5, settings.general.frameSkip);
+  if(skipN > 0) {
+    videoFrameSkipCounter++;
+    uploadFrame = (videoFrameSkipCounter % (skipN + 1) == 0);
+  } else {
+    videoFrameSkipCounter = 0;
+  }
+
+  if(!uploadFrame) return;
 
   u32 videoWidth = node->width() * node->scaleX();
   u32 videoHeight = node->height() * node->scaleY();

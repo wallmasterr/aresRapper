@@ -18,6 +18,28 @@ auto OptionSettings::construct() -> void {
   runAheadLayout.setAlignment(1).setPadding(12_sx, 0);
     runAheadHint.setText("Removes one frame of input lag, but doubles system requirements").setFont(Font().setSize(7.0)).setForegroundColor(SystemColor::Sublabel);
 
+  if(settings.general.frameSkip > 5) settings.general.frameSkip = 5;
+  frameSkipLabel.setText("Frame skip:");
+  for(u32 n : range(6)) {
+    ComboButtonItem item{&frameSkipOption};
+    item.setText(n == 0 ? string{"None"} : string{"Draw 1/", n + 1, " (~", (100u / (n + 1)), "%)"});
+    if(n == settings.general.frameSkip) item.setSelected();
+  }
+  frameSkipOption.onChange([&] {
+    u32 selected = 0;
+    for(u32 i : range(frameSkipOption.itemCount())) {
+      if(frameSkipOption.item(i).selected()) {
+        selected = i;
+        break;
+      }
+    }
+    settings.general.frameSkip = min<u32>(5, selected);
+    program.videoFrameSkipCounter = 0;
+    program.applyFrameSkipVideoPolicy();
+  });
+  frameSkipLayout.setAlignment(1).setPadding(12_sx, 0);
+    frameSkipHint.setText("Skips some GPU uploads for higher speed; emulation still advances every frame. Video sync is off while active.").setFont(Font().setSize(7.0)).setForegroundColor(SystemColor::Sublabel);
+
   autoSaveMemory.setText("Auto-Save Memory Periodically").setChecked(settings.general.autoSaveMemory).onToggle([&] {
     settings.general.autoSaveMemory = autoSaveMemory.checked();
   });

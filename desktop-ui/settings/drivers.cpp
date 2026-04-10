@@ -35,6 +35,7 @@ auto DriverSettings::construct() -> void {
   videoBlockingToggle.setText("Synchronize").onToggle([&] {
     settings.video.blocking = videoBlockingToggle.checked();
     ruby::video.setBlocking(settings.video.blocking);
+    program.applyFrameSkipVideoPolicy();
   });
   videoFlushToggle.setText("GPU sync").onToggle([&] {
     settings.video.flush = videoFlushToggle.checked();

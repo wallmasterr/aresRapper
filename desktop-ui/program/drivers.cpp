@@ -52,6 +52,19 @@ auto Program::videoDriverUpdate() -> void {
   }
 
   if(!kiosk) presentation.loadShaders();
+
+  applyFrameSkipVideoPolicy();
+}
+
+auto Program::applyFrameSkipVideoPolicy() -> void {
+  Program::Guard guard;
+  if(!ruby::video.ready() || !ruby::video.hasBlocking()) return;
+  if(fastForwarding) return;
+  if(settings.general.frameSkip > 0) {
+    ruby::video.setBlocking(false);
+  } else {
+    ruby::video.setBlocking(settings.video.blocking);
+  }
 }
 
 auto Program::videoMonitorUpdate() -> void {
