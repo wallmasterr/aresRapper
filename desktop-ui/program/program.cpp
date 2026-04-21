@@ -35,25 +35,6 @@ auto Program::create() -> void {
   _isRunning = true;
   worker = thread::create(std::bind_front(&Program::emulatorRunLoop, this));
   program.rewindReset();
-
-  if(!startGameLoad.empty()) {
-    Program::Guard guard;
-    auto gameToLoad = startGameLoad.front();
-    startGameLoad.erase(startGameLoad.begin());
-    if(startSystem) {
-      for(auto &emulator: emulators) {
-        if(emulator->name == startSystem) {
-          load(emulator, gameToLoad);
-          return;
-        }
-      }
-      return;
-    }
-
-    if(auto emulator = identify(gameToLoad)) {
-      load(emulator, gameToLoad);
-    }
-  }
 }
 
 auto Program::waitForInterrupts() -> void {

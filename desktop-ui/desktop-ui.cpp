@@ -84,15 +84,10 @@ static bool bgmReady = false;
 
 auto findBackgroundTracks() -> std::vector<string> {
   std::vector<string> candidates = {
-    locate("resource/track1.mp3"),
     locate("resource/track1.wav"),
-    locate("track1.mp3"),
     locate("track1.wav"),
-    {Path::active(), "desktop-ui/resource/track1.mp3"},
     {Path::active(), "desktop-ui/resource/track1.wav"},
-    {Path::active(), "resource/track1.mp3"},
     {Path::active(), "resource/track1.wav"},
-    {Path::active(), "track1.mp3"},
     {Path::active(), "track1.wav"},
   };
   std::vector<string> tracks;
@@ -106,20 +101,16 @@ auto startBackgroundMusic() -> void {
   bgmReady = false;
   auto tracks = findBackgroundTracks();
   if(tracks.empty()) {
-    print("[BGM] track not found: track1.mp3 / track1.wav\n");
+    print("[BGM] track not found: track1.wav\n");
     return;
   }
 
   for(auto& track : tracks) {
     print("[BGM] track: ", track, "\n");
     mciRun("close aresbgm", false);
-    bool isWav = track.iendsWith(".wav");
-    auto openTyped = string{"open \"", track, "\" type ", isWav ? "waveaudio" : "mpegvideo", " alias aresbgm"};
+    auto openTyped = string{"open \"", track, "\" type waveaudio alias aresbgm"};
     auto openAuto = string{"open \"", track, "\" alias aresbgm"};
     if(mciRun(openTyped, false) != 0 && mciRun(openAuto, false) != 0) {
-      if(!isWav) {
-        print("[BGM] MP3 unavailable, trying next candidate.\n");
-      }
       continue;
     }
     mciRun("set aresbgm time format milliseconds", false);
@@ -312,6 +303,8 @@ auto nall::main(Arguments arguments) -> void {
     }
   }
 
+  // Keep convenient auto-load of game.z64, but it now loads on a deferred
+  // main-loop tick so window startup stays responsive.
   if(program.startGameLoad.empty()) {
     string autoRom = {Path::program(), "game.z64"};
     if(!inode::exists(autoRom)) autoRom = {Path::active(), "game.z64"};
@@ -349,10 +342,34 @@ auto nall::main(Arguments arguments) -> void {
 
   Instances::presentation.construct();
 
-  program.create();
   presentation.setVisible();
+  program.create();
   Application::onMain([&] {
     program.main();
+
+    static bool firstTickCompleted = false;
+    if(!firstTickCompleted) {
+      firstTickCompleted = true;
+      return;
+    }
+
+    static bool startupGameTried = false;
+    if(!startupGameTried && !program.startGameLoad.empty()) {
+      startupGameTried = true;
+      Program::Guard guard;
+      auto gameToLoad = program.startGameLoad.front();
+      program.startGameLoad.erase(program.startGameLoad.begin());
+      if(program.startSystem) {
+        for(auto& emu : emulators) {
+          if(emu->name == program.startSystem) {
+            program.load(emu, gameToLoad);
+            break;
+          }
+        }
+      } else if(auto emu = program.identify(gameToLoad)) {
+        program.load(emu, gameToLoad);
+      }
+    }
 
     // Stagger expensive startup work so first frame appears quickly.
     static u32 deferredStage = 0;
