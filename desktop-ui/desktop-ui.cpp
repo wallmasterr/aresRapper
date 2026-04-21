@@ -247,8 +247,8 @@ auto nall::main(Arguments arguments) -> void {
 #if defined(PLATFORM_WINDOWS)
     print("  --terminal            Create new terminal window\n");
 #endif
-    print("  --fullscreen          Start in full screen mode\n");
-    print("  --windowed            Start in a window (default)\n");
+    print("  --fullscreen          Start in full screen mode (default unless --windowed)\n");
+    print("  --windowed            Start in a window\n");
     print("  --pseudofullscreen    Start in psuedo full screen mode\n");
     print("  --kiosk               Start in minimal UI mode (implies --no-file-prompt)\n");
     print("  --system name         Specify the system name\n");
