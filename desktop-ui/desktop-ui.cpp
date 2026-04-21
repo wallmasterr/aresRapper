@@ -1,5 +1,14 @@
 #include "desktop-ui.hpp"
 #include "wine-compat.hpp"
+#if defined(PLATFORM_WINDOWS)
+  #pragma comment(lib, "winmm.lib")
+  extern "C" __declspec(dllimport) unsigned long __stdcall mciSendStringA(
+    const char* lpstrCommand, char* lpstrReturnString, unsigned int uReturnLength, void* hwndCallback
+  );
+  extern "C" __declspec(dllimport) int __stdcall mciGetErrorStringA(
+    unsigned long mcierr, char* pszText, unsigned int cchText
+  );
+#endif
 
 namespace ruby {
   Video video;
@@ -52,6 +61,95 @@ auto locate(const string& name) -> string {
 #endif
 
 }
+
+#if defined(PLATFORM_WINDOWS)
+namespace {
+auto mciRun(const string& command, bool verbose = true) -> unsigned long {
+  auto rc = mciSendStringA(command, nullptr, 0, nullptr);
+  if(rc != 0 && verbose) {
+    char errorText[256] = {};
+    mciGetErrorStringA(rc, errorText, sizeof(errorText));
+    print("[BGM] MCI failed (", rc, "): ", command, " -> ", errorText, "\n");
+  }
+  return rc;
+}
+
+auto mciQuery(const string& command) -> string {
+  char result[128] = {};
+  if(mciSendStringA(command, result, sizeof(result), nullptr) != 0) return {};
+  return result;
+}
+
+static bool bgmReady = false;
+
+auto findBackgroundTracks() -> std::vector<string> {
+  std::vector<string> candidates = {
+    locate("resource/track1.mp3"),
+    locate("resource/track1.wav"),
+    locate("track1.mp3"),
+    locate("track1.wav"),
+    {Path::active(), "desktop-ui/resource/track1.mp3"},
+    {Path::active(), "desktop-ui/resource/track1.wav"},
+    {Path::active(), "resource/track1.mp3"},
+    {Path::active(), "resource/track1.wav"},
+    {Path::active(), "track1.mp3"},
+    {Path::active(), "track1.wav"},
+  };
+  std::vector<string> tracks;
+  for(auto& candidate : candidates) {
+    if(inode::exists(candidate)) tracks.push_back(candidate);
+  }
+  return tracks;
+}
+
+auto startBackgroundMusic() -> void {
+  bgmReady = false;
+  auto tracks = findBackgroundTracks();
+  if(tracks.empty()) {
+    print("[BGM] track not found: track1.mp3 / track1.wav\n");
+    return;
+  }
+
+  for(auto& track : tracks) {
+    print("[BGM] track: ", track, "\n");
+    mciRun("close aresbgm", false);
+    bool isWav = track.iendsWith(".wav");
+    auto openTyped = string{"open \"", track, "\" type ", isWav ? "waveaudio" : "mpegvideo", " alias aresbgm"};
+    auto openAuto = string{"open \"", track, "\" alias aresbgm"};
+    if(mciRun(openTyped, false) != 0 && mciRun(openAuto, false) != 0) {
+      if(!isWav) {
+        print("[BGM] MP3 unavailable, trying next candidate.\n");
+      }
+      continue;
+    }
+    mciRun("set aresbgm time format milliseconds", false);
+    // MCI volume range is 0..1000; 500 ~= 50%.
+    mciRun("setaudio aresbgm volume to 500", false);
+    if(mciRun("play aresbgm from 0", true) != 0) continue;
+    bgmReady = true;
+    return;
+  }
+
+  print("[BGM] unable to play any track candidate.\n");
+}
+
+auto updateBackgroundMusic() -> void {
+  if(!bgmReady) return;
+  auto mode = mciQuery("status aresbgm mode");
+  if(!mode) return;
+  if(mode == "stopped") {
+    mciRun("seek aresbgm to start", false);
+    mciRun("play aresbgm from 0", false);
+  }
+}
+
+auto stopBackgroundMusic() -> void {
+  bgmReady = false;
+  mciSendStringA("stop aresbgm", nullptr, 0, nullptr);
+  mciSendStringA("close aresbgm", nullptr, 0, nullptr);
+}
+}
+#endif
 
 #include <nall/main.hpp>
 auto nall::main(Arguments arguments) -> void {
@@ -158,8 +256,8 @@ auto nall::main(Arguments arguments) -> void {
 #if defined(PLATFORM_WINDOWS)
     print("  --terminal            Create new terminal window\n");
 #endif
-    print("  --fullscreen          Start in full screen mode (default unless --windowed)\n");
-    print("  --windowed            Start in a window (disable default full screen)\n");
+    print("  --fullscreen          Start in full screen mode\n");
+    print("  --windowed            Start in a window (default)\n");
     print("  --pseudofullscreen    Start in psuedo full screen mode\n");
     print("  --kiosk               Start in minimal UI mode (implies --no-file-prompt)\n");
     print("  --system name         Specify the system name\n");
@@ -250,19 +348,52 @@ auto nall::main(Arguments arguments) -> void {
   }
 
   Instances::presentation.construct();
-  if(!program.kiosk) {
-    Instances::settingsWindow.construct();
-    program.settingsWindowConstructed = true;
-    Instances::gameBrowserWindow.construct();
-    program.gameBrowserWindowConstructed = true;
-    Instances::toolsWindow.construct();
-    program.toolsWindowConstructed = true;
-  }
 
   program.create();
   presentation.setVisible();
-  Application::onMain(std::bind_front(&Program::main, &program));
+  Application::onMain([&] {
+    program.main();
+
+    // Stagger expensive startup work so first frame appears quickly.
+    static u32 deferredStage = 0;
+    if(program.kiosk) return;
+    if(deferredStage == 0) {
+      Instances::settingsWindow.construct();
+      program.settingsWindowConstructed = true;
+      deferredStage = 1;
+      return;
+    }
+    if(deferredStage == 1) {
+      Instances::gameBrowserWindow.construct();
+      program.gameBrowserWindowConstructed = true;
+      deferredStage = 2;
+      return;
+    }
+    if(deferredStage == 2) {
+      Instances::toolsWindow.construct();
+      program.toolsWindowConstructed = true;
+      deferredStage = 3;
+      return;
+    }
+    if(deferredStage == 3) {
+      presentation.loadShaders();
+      deferredStage = 4;
+      return;
+    }
+#if defined(PLATFORM_WINDOWS)
+    if(deferredStage == 4) {
+      startBackgroundMusic();
+      deferredStage = 5;
+    }
+    if(deferredStage >= 5) {
+      updateBackgroundMusic();
+    }
+#endif
+  });
   Application::run();
+#if defined(PLATFORM_WINDOWS)
+  stopBackgroundMusic();
+#endif
 
   settings.save();
 

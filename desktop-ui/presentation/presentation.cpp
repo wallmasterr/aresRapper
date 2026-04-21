@@ -107,7 +107,6 @@ Presentation::Presentation() {
     if(settings.video.autoCentering = videoAutoCentering.checked()) resizeWindow();
   });
   videoShaderMenu.setText("Shader").setIcon(Icon::Emblem::Image);
-  loadShaders();
   bootOptionsMenu.setText("Boot Options").setIcon(Icon::Place::Settings);
   fastBoot.setText("Fast Boot").setChecked(settings.boot.fast).onToggle([&] {
     settings.boot.fast = fastBoot.checked();
